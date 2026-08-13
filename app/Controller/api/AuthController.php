@@ -2,6 +2,7 @@
 namespace App\Controller\Api;
 
 use App\Controller\BaseController;
+use Core\Helpers\Database;
 
 class AuthController extends BaseController
 {
@@ -28,5 +29,7 @@ class AuthController extends BaseController
         }
         
         //
+        $db = Database::getInstance()->getConnection();
+        dump($db);
     }
 }
