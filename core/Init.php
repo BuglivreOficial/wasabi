@@ -4,6 +4,7 @@ namespace Core;
 use Core\Router\Routing;
 use Dotenv\Exception\InvalidPathException;
 use Exception;
+use PDOException;
 
 class Init
 {
@@ -23,6 +24,8 @@ class Init
             dump($e);
         } catch(InvalidPathException $e) {
             dump($e);
+        } catch(PDOException $e) {
+            dump($e->getMessage());
         }
     }
 }
