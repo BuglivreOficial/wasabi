@@ -25,7 +25,7 @@ CREATE TABLE users (
     bio VARCHAR(500) DEFAULT NULL,
 
     -- Access control
-    role ENUM('admin', 'moderator', 'customer', 'guest') NOT NULL DEFAULT 'customer',
+    role ENUM('admin', 'moderator', 'support', 'vip', 'user') NOT NULL DEFAULT 'user',
     status ENUM('active', 'inactive', 'suspended', 'deleted') NOT NULL DEFAULT 'active',
 
     -- Audit / tracking

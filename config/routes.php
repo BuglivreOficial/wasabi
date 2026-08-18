@@ -9,4 +9,5 @@ use Core\Router\Routing;
 
 
 //ROTAS DE AUTENTICAÇÃO
+$router->post('/auth/login', [AuthController::class, 'login']);
 $router->post('/auth/register', [AuthController::class, 'register']);

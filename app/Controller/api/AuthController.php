@@ -3,9 +3,13 @@ namespace App\Controller\Api;
 
 use App\Controller\BaseController;
 use Core\Helpers\Database;
+use Core\Helpers\JwtService;
 
 class AuthController extends BaseController
 {
+    public function login()
+    {
+    }
     public function register(): void
     {
         //VALIDAÇÃO DOS CAMPOS RECEBIDOS
@@ -26,7 +30,7 @@ class AuthController extends BaseController
                 'status' => false,
                 'erros' => $this->validador->errors(),
                 'created_at' => date('d/m/Y H:i:s')
-            ]);
+            ], 422);
         }
 
         //ARMAZERNA O CAMPOS NECESSARIO PRO CADASTRO
@@ -38,10 +42,10 @@ class AuthController extends BaseController
         $db = Database::getInstance()->getConnection();
 
         //
-        $sqlUsername = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
         $sqlEmail = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
         $sqlInsert = "INSERT INTO users (username, email, password_hash) VALUES (:username, :email, :password_hash)";
 
+        $sqlUsername = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
         //VERIFICAR SE O NOME DE USUÁRIO JÁ EXISTE
         $stmt = $db->prepare($sqlUsername);
         $stmt->execute([$username]);
@@ -49,6 +53,7 @@ class AuthController extends BaseController
             $this->response->json([
                 'status' => false,
                 'erro' => 'Nome de usuário já existe',
+                'code' => 'AUTH_ERROR_' . bin2hex(random_bytes(3)),
                 'created_at' => date('d/m/Y H:i:s')
             ], 409);
         }
@@ -60,6 +65,7 @@ class AuthController extends BaseController
             $this->response->json([
                 'status' => false,
                 'erro' => 'Email já existe',
+                'code' => 'AUTH_ERROR_' . bin2hex(random_bytes(3)),
                 'created_at' => date('d/m/Y H:i:s')
             ], 409);
         }
@@ -67,11 +73,33 @@ class AuthController extends BaseController
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         $stmtInsert = $db->prepare($sqlInsert);
-        
-        $stmtInsert->execute([
-            ':username' => $username,
-            ':email'    => $email,
-            ':password_hash' => $passwordHash
+        try {
+            $stmtInsert->execute([
+                ':username' => $username,
+                ':email' => $email,
+                ':password_hash' => $passwordHash
+            ]);
+        } catch (\PDOException $e) {
+            // FALLBACK CONTRA CONCORRENCIA (RACE CONDITION) ENTRE SELECT E INSERT
+            if ($e->getCode() === '23000') {
+                $this->response->json([
+                    'status' => false,
+                    'erro' => 'Usuário ou email já existe',
+                    'code' => 'AUTH_ERROR_' . bin2hex(random_bytes(3)),
+                    'created_at' => date('d/m/Y H:i:s')
+                ], 409);
+                return;
+            }
+            throw $e; // outros erros de banco sobem normalmente
+        }
+
+        $userId = $db->lastInsertId();
+
+        $jwtService = new JwtService();
+        $token = $jwtService->generate([
+            'sub' => $userId,
+            'username' => $username,
+            'email' => $email
         ]);
 
         //SE TUDO DE CERTO RETORNAR UMA MENSAGEM DE SUCESSO
@@ -79,8 +107,13 @@ class AuthController extends BaseController
             'status' => true,
             'message' => 'Usuário criado com sucesso!',
             'data' => [
-                'token_access' => "NÃO IMPLEMENTADO AINDA"
+                'token_access' => $token,
+                'username' => $username,
+                'email' => $email,
+                'role' => 'user',
+                'status' => 'active',
             ],
+            'code' => 'AUTH_SUCCESS_' . bin2hex(random_bytes(3)),
             'created_at' => date('d/m/Y H:i:s')
         ], 200);
     }
