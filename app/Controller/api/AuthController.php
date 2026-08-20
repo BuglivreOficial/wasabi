@@ -9,6 +9,66 @@ class AuthController extends BaseController
 {
     public function login()
     {
+        //VALIDAÇÃO DOS CAMPOS RECEBIDOS
+        $this->validador->validate([
+            'email' => 'required|email',
+            'password' => [
+                'rules' => 'required|min:6|max:64',
+                'name' => 'senha'
+            ]
+        ], $this->request->body());
+        //SE A VALIDAÇÃO FALHAR MANDAR RESPOSTA DOS ERROS
+        if ($this->validador->fails()) {
+            $this->response->json([
+                'status' => false,
+                'erros' => $this->validador->errors(),
+                'created_at' => date('d/m/Y H:i:s')
+            ], 422);
+        }
+
+        //ARMAZERNA O CAMPOS NECESSARIO
+        $email = $this->request->body('email');
+        $password = $this->request->body('password');
+
+        //ARMAZENAR A INSTANCIA DO BANCO DE DADOS
+        $db = Database::getInstance()->getConnection();
+        $sql = "SELECT id, username, email, password_hash, role, status FROM users WHERE email = ? LIMIT 1";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            $this->response->json([
+                'status' => false,
+                'erro' => 'Credenciais inválidas',
+                'code' => 'AUTH_ERROR_' . bin2hex(random_bytes(3)),
+                'created_at' => date('d/m/Y H:i:s')
+            ], 401);
+            return;
+        }
+
+        $jwtService = new JwtService();
+        $token = $jwtService->generate([
+            'sub' => $user['id'],
+            'username' => $user['username'],
+            'email' => $user['email'],
+            'role' => $user['role'] ?? 'user',
+            'status' => $user['status'] ?? 'active'
+        ]);
+
+        $this->response->json([
+            'status' => true,
+            'message' => 'Login realizado com sucesso!',
+            'data' => [
+                'token_access' => $token,
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'role' => $user['role'] ?? 'user',
+                'status' => $user['status'] ?? 'active',
+            ],
+            'code' => 'AUTH_SUCCESS_' . bin2hex(random_bytes(3)),
+            'created_at' => date('d/m/Y H:i:s')
+        ], 200);
     }
     public function register(): void
     {

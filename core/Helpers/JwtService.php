@@ -12,7 +12,7 @@ class JwtService
     public function __construct()
     {
         $this->secret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET');
-        $this->expirationSeconds = 60 * 60 * 24 * 7; // 1 hora
+        $this->expirationSeconds = 60 * 60 * 24 * 7; // 1 SEMANA
 
         if (empty($this->secret)) {
             throw new \RuntimeException('JWT_SECRET não configurado no ambiente.');
