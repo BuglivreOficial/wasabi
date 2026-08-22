@@ -4,9 +4,11 @@ namespace App\Controller\Api;
 use App\Controller\BaseController;
 use Core\Helpers\Database;
 use Core\Helpers\JwtService;
+use Core\Helpers\Mailer;
 
 class AuthController extends BaseController
 {
+
     public function login()
     {
         //VALIDAÇÃO DOS CAMPOS RECEBIDOS

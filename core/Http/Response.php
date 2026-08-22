@@ -10,4 +10,8 @@ class Response
         echo json_encode($data);
         exit;
     }
+    public function view(string $view): void
+    {
+       require dirname(__DIR__, 2) . '/layout/' . $view . '.html';
+    }
 }
