@@ -11,6 +11,7 @@ class Init
 {
     private const REQUIRED_ENV_VARS = [
         'APP_NAME',
+        'APP_URL',
         'DB_HOST',
         'DB_PORT',
         'DB_DATABASE',
