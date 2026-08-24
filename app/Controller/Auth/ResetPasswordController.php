@@ -41,9 +41,9 @@ class ResetPasswordController
         }
 
         // invalida o token depois de usado
-        $this->cache->delete("reset-token:{$token}");
-        $this->cache->delete("reset-user:{$usuarioId}");
-        
+        //$this->cache->delete("reset-token:{$token}");
+        //$this->cache->delete("reset-user:{$usuarioId}");
+
         $this->response->view('app/reset-password');
     }
 
